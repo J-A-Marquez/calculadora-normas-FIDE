@@ -69,13 +69,15 @@ dp_table = {
 # =========================================================
 # INTERFAZ WEB (STREAMLIT)
 # =========================================================
-st.set_page_config(page_title="Calculador de Normas FIDE", page_icon="♟️", layout="centered")
+st.set_page_config(page_title="Calculadora de Normas FIDE", page_icon="♟️", layout="centered")
 
-st.title("♟️ Calculador de Normas FIDE")
-st.write("Esta herramienta analiza el archivo de cuadro cruzado para verificar si un jugador cumple las condiciones de norma.")
+st.title("♟️ Calculadora de Normas FIDE")
+st.subheader("Creado por el Árbitro FIDE Juan Antonio Márquez León (22237364)")
+
+st.write("Esta herramienta analiza el archivo de cuadro cruzado para verificar si un jugador cumple las condiciones para obtener una norma de jugador.")
 
 # 1. Subida del archivo por el usuario
-uploaded_file = st.file_uploader("Sube aquí el archivo 'crosstable.txt' generado por el programa de emparejamientos (Vega, etc.)", type=["txt"])
+uploaded_file = st.file_uploader("Sube aquí el archivo 'crosstable.txt' generado por el programa de emparejamientos (Vega)", type=["txt"])
 
 if uploaded_file is not None:
     players = []
