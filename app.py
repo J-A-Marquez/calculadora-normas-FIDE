@@ -77,7 +77,7 @@ st.subheader("Creado por el Árbitro FIDE Juan Antonio Márquez León (22237364)
 st.write("Esta herramienta analiza el cuadro cruzado de un torneo suizo para verificar si un jugador cumple las condiciones para obtener una norma.")
 
 # 1. Subida del archivo por el usuario
-uploaded_file = st.file_uploader("Sube aquí el archivo 'crosstable.txt' generado por el programa de emparejamientos (Vega)", type=["txt"])
+uploaded_file = st.file_uploader("Sube aquí el archivo 'crosstable.txt' generado por el programa de emparejamientos (Vega):", type=["txt"])
 
 if uploaded_file is not None:
     players = []
@@ -260,13 +260,13 @@ if uploaded_file is not None:
             st.table(opponent_details)
             
             if elo_adjusted:
-                st.warning(f"⚠️ **Umbral FIDE aplicado:** El rival con menor ELO ({original_min_elo}) ha sido ajustado a {elo_threshold} para el cálculo de la media del torneo.")
+                st.warning(f"⚠️ **Umbral FIDE aplicado:** El rival con menor ELO ({original_min_elo}) ha sido ajustado a {elo_threshold} para el cálculo del ELO medio.")
 
             # Bloque de condiciones
             st.write("### 📊 Verificación de las condiciones de la FIDE")
             
             st.write(f"**1. ELO medio de los rivales** (Mínimo requerido: {elo_target})  \n*Actual:* **{avg_elo:.2f}** ➔ {st_status(cond_elo)}")
-            st.write(f"**2. Rivales itulados de categoría {norm_type} o superior** (Mínimo requerido: {req_cat_min})  \n*Actual:* **{category_titles}** ➔ {st_status(cond_cat_titles)}")
+            st.write(f"**2. Rivales titulados de categoría {norm_type} o superior** (Mínimo requerido: {req_cat_min})  \n*Actual:* **{category_titles}** ➔ {st_status(cond_cat_titles)}")
             st.write(f"**3. Rivales titulados totales** (Mínimo requerido: {req_tot_min})  \n*Actual:* **{valid_titles_total}** ➔ {st_status(cond_tot_titles)}")
             st.write(f"**4. Rivales de la misma federación ({norm_p.federation})** (Máximo permitido: {req_fed_player_max})  \n*Actual:* **{same_fed_as_player}** ➔ {st_status(cond_fed_player)}")
             st.write(f"**5. Rivales de la federación más común** (Máximo permitido: {req_fed_any_max})  \n*Actual:* **{max_freq}** ➔ {st_status(cond_fed_any)}")
