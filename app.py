@@ -74,7 +74,7 @@ st.set_page_config(page_title="Calculadora de Normas FIDE", page_icon="♟️", 
 st.title("♟️ Calculadora de Normas FIDE")
 st.subheader("Creado por el Árbitro FIDE Juan Antonio Márquez León (22237364)")
 
-st.write("Esta herramienta analiza el archivo de cuadro cruzado para verificar si un jugador cumple las condiciones para obtener una norma de jugador.")
+st.write("Esta herramienta analiza el cuadro cruzado de un torneo suizo para verificar si un jugador cumple las condiciones para obtener una norma.")
 
 # 1. Subida del archivo por el usuario
 uploaded_file = st.file_uploader("Sube aquí el archivo 'crosstable.txt' generado por el programa de emparejamientos (Vega)", type=["txt"])
@@ -112,7 +112,7 @@ if uploaded_file is not None:
     player_options = {p.id: f"{p.id} - {p.name} (ELO: {p.elo})" for p in players}
     
     st.markdown("---")
-    st.subheader("Configuración del Cálculo")
+    st.subheader("Selección del jugador")
     
     # Selección de jugador principal
     norm_player_id = st.selectbox("Selecciona el jugador que busca la norma:", options=list(player_options.keys()), format_func=lambda x: player_options[x])
@@ -204,7 +204,7 @@ if uploaded_file is not None:
         n = len(opponent_elos)
 
         if n > 0:
-            # Suelo FIDE (Floor limit)
+            # Umbral FIDE (Floor limit)
             elo_adjusted = False
             original_min_elo = 0
             min_elo = min(opponent_elos)
@@ -252,25 +252,25 @@ if uploaded_file is not None:
             # MOSTRAR RESULTADOS EN LA PÁGINA
             # ==========================================
             st.markdown("---")
-            st.header(f"Informe de Requisitos para Norma de {norm_type}")
+            st.header(f"Informe de requisitos para norma de {norm_type}")
             st.subheader(f"Jugador: {norm_p.name} ({norm_p.federation})")
             
             # Tabla de Oponentes
-            st.write("### 📋 Listado de Rivales Computados")
+            st.write("### 📋 Listado de rivales")
             st.table(opponent_details)
             
             if elo_adjusted:
                 st.warning(f"⚠️ **Umbral FIDE aplicado:** El rival con menor ELO ({original_min_elo}) ha sido ajustado a {elo_threshold} para el cálculo de la media del torneo.")
 
             # Bloque de condiciones
-            st.write("### 📊 Verificación de Condiciones FIDE")
+            st.write("### 📊 Verificación de las condiciones de la FIDE")
             
-            st.write(f"**1. ELO Medio de Rivales** (Mínimo requerido: {elo_target})  \n*Actual:* **{avg_elo:.2f}** ➔ {st_status(cond_elo)}")
-            st.write(f"**2. Titulados de categoría o superior** (Mínimo requerido: {req_cat_min})  \n*Actual:* **{category_titles}** ➔ {st_status(cond_cat_titles)}")
-            st.write(f"**3. Titulados totales en el torneo** (Mínimo requerido: {req_tot_min})  \n*Actual:* **{valid_titles_total}** ➔ {st_status(cond_tot_titles)}")
-            st.write(f"**4. Rivales de la misma Federación ({norm_p.federation})** (Máximo permitido: {req_fed_player_max})  \n*Actual:* **{same_fed_as_player}** ➔ {st_status(cond_fed_player)}")
-            st.write(f"**5. Rivales de la Federación más común** (Máximo permitido: {req_fed_any_max})  \n*Actual:* **{max_freq}** ➔ {st_status(cond_fed_any)}")
-            st.write(f"**6. Diversidad de banderas** (Mínimo requerido: 3 federaciones distintas)  \n*Actual:* **{len(federation_counts)}** banderas ➔ {st_status(cond_fed_diff)}")
+            st.write(f"**1. ELO medio de los rivales** (Mínimo requerido: {elo_target})  \n*Actual:* **{avg_elo:.2f}** ➔ {st_status(cond_elo)}")
+            st.write(f"**2. Rivales itulados de categoría {norm_type} o superior** (Mínimo requerido: {req_cat_min})  \n*Actual:* **{category_titles}** ➔ {st_status(cond_cat_titles)}")
+            st.write(f"**3. Rivales titulados totales** (Mínimo requerido: {req_tot_min})  \n*Actual:* **{valid_titles_total}** ➔ {st_status(cond_tot_titles)}")
+            st.write(f"**4. Rivales de la misma federación ({norm_p.federation})** (Máximo permitido: {req_fed_player_max})  \n*Actual:* **{same_fed_as_player}** ➔ {st_status(cond_fed_player)}")
+            st.write(f"**5. Rivales de la federación más común** (Máximo permitido: {req_fed_any_max})  \n*Actual:* **{max_freq}** ➔ {st_status(cond_fed_any)}")
+            st.write(f"**6. Número de federaciones diferentes** (Mínimo requerido: 3)  \n*Actual:* **{len(federation_counts)}** ➔ {st_status(cond_fed_diff)}")
             
             if min_required_score < 0.0:
                 st.error(f"**7. Puntuación mínima necesaria** (Para TPR {target_performance}) ➔ **❌ IMPOSIBLE** (La media de ELO es demasiado baja; incluso ganando todo no se alcanza la performance)")
@@ -281,6 +281,6 @@ if uploaded_file is not None:
                     st.balloons()
                     st.success(f"🎉 ¡El jugador cumple TODOS los requisitos para optar a la norma de {norm_type}!")
                 else:
-                    st.info("💡 El cálculo numérico es correcto, pero revisa las condiciones marcadas con '❌' para ver qué falla en la norma.")
+                    st.info("💡 Revisa las condiciones marcadas con '❌' para ver qué falla en la norma.")
         else:
             st.error("El jugador seleccionado no posee partidas válidas computables en este archivo.")
