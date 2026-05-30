@@ -146,27 +146,26 @@ if uploaded_file is not None:
         actual_score = 0.0
         opponent_details = []
 
-        def process_opponent(opp):
-            nonlocal valid_titles_total, category_titles, same_fed_as_player
-            opponent_elos.append(opp.elo)
-            titles.append(opp.title if opp.title else "Ninguno")
-            
-            rank = get_title_rank(opp.title)
-            if rank > 0:
-                valid_titles_total += 1
-                if rank >= target_rank:
-                    category_titles += 1
-                    
-            federation_counts[opp.federation] = federation_counts.get(opp.federation, 0) + 1
-            if opp.federation == norm_p.federation:
-                same_fed_as_player += 1
-
         # Extraer estadísticas de las partidas reales
         for m in norm_p.matches:
             if m.opponent > 0 and m.color != "F" and not m.special:
                 opp = get_player(m.opponent, players)
                 if opp:
-                    process_opponent(opp)
+                    # Datos directos del rival
+                    opponent_elos.append(opp.elo)
+                    titles.append(opp.title if opp.title else "Ninguno")
+                    
+                    rank = get_title_rank(opp.title)
+                    if rank > 0:
+                        valid_titles_total += 1
+                        if rank >= target_rank:
+                            category_titles += 1
+                            
+                    federation_counts[opp.federation] = federation_counts.get(opp.federation, 0) + 1
+                    if opp.federation == norm_p.federation:
+                        same_fed_as_player += 1
+                    
+                    # Resultado
                     res_str = "0"
                     if m.result == "+":
                         actual_score += 1.0
@@ -180,8 +179,21 @@ if uploaded_file is not None:
                         "Título": opp.title if opp.title else "-", "Fed": opp.federation, "Resultado": res_str
                     })
 
+        # Extraer estadísticas si hay rival hipotético añadido
         if last_opp:
-            process_opponent(last_opp)
+            opponent_elos.append(last_opp.elo)
+            titles.append(last_opp.title if last_opp.title else "Ninguno")
+            
+            rank = get_title_rank(last_opp.title)
+            if rank > 0:
+                valid_titles_total += 1
+                if rank >= target_rank:
+                    category_titles += 1
+                    
+            federation_counts[last_opp.federation] = federation_counts.get(last_opp.federation, 0) + 1
+            if last_opp.federation == norm_p.federation:
+                same_fed_as_player += 1
+
             opponent_details.append({
                 "ID": last_opp.id, "Nombre": last_opp.name, "ELO": last_opp.elo, 
                 "Título": last_opp.title if last_opp.title else "-", "Fed": last_opp.federation, "Resultado": "?"
