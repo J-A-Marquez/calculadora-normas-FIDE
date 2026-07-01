@@ -218,7 +218,14 @@ if uploaded_file is not None:
             # ELO Medio de los Rivales (Rc)
             avg_elo = sum(opponent_elos) / n
             max_freq = max(federation_counts.values()) if federation_counts else 0
-
+            
+            # 1. Calculo de la performance
+            actual_p = actual_score / n
+            actual_p_idx = int(round(actual_p * 100.0))
+            actual_p_idx = max(0, min(100, actual_p_idx)) 
+            actual_dp = dp_table.get(actual_p_idx, 0)
+            actual_performance = round(avg_elo + actual_dp + 1e-9)
+            
             # Cálculo de puntuación mínima
             min_required_score = -1.0
             s = 0.0
@@ -228,7 +235,6 @@ if uploaded_file is not None:
                 dp = dp_table.get(p_idx, 0)
                 if avg_elo + dp >= target_performance:
                     min_required_score = s
-                    performance = round( avg_elo + dp + 1e-9)
                     break
                 s += 0.5
 
