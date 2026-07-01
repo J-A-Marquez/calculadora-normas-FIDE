@@ -228,6 +228,7 @@ if uploaded_file is not None:
                 dp = dp_table.get(p_idx, 0)
                 if avg_elo + dp >= target_performance:
                     min_required_score = s
+                    performance = avg_elo + dp
                     break
                 s += 0.5
 
@@ -275,7 +276,7 @@ if uploaded_file is not None:
             if min_required_score < 0.0:
                 st.error(f"**7. Puntuación mínima necesaria** (Para TPR {target_performance}) ➔ **❌ IMPOSIBLE** (La media de ELO es demasiado baja; incluso ganando todo no se alcanza la performance)")
             else:
-                st.write(f"**7. Puntuación mínima necesaria** (Para TPR {target_performance})  \n*Requerida:* **{min_required_score} ptos** | *Actual del jugador:* **{actual_score} ptos** ➔ {st_status(cond_score)}")
+                st.write(f"**7. Puntuación mínima necesaria** (Para TPR {target_performance}) (Puntuación requerida: {min_required_score} ptos) \n*Performance actual:* **{performance}** \n*Puntuación actual:* **{actual_score} ptos** ➔ {st_status(cond_score)}")
                 
                 if cond_score and cond_elo and cond_cat_titles and cond_tot_titles and cond_fed_player and cond_fed_any and cond_fed_diff:
                     st.balloons()
