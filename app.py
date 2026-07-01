@@ -228,7 +228,7 @@ if uploaded_file is not None:
                 dp = dp_table.get(p_idx, 0)
                 if avg_elo + dp >= target_performance:
                     min_required_score = s
-                    performance = avg_elo + dp
+                    performance = round( avg_elo + dp + 1e-9)
                     break
                 s += 0.5
 
