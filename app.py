@@ -70,8 +70,7 @@ dp_table = {
 # =========================================================
 # LÓGICA DE CÁLCULO FIDE
 # =========================================================
-# MODIFICADO: Acepta una lista 'hypothetical_opps' en lugar de 'last_opp'
-def evaluate_norm(norm_p, norm_type, players, hypothetical_opps=None, tournament_exemption=False):
+def evaluate_norm(norm_p, norm_type, players, hypothetical_opps=None, hypothetical_score=0.0, tournament_exemption=False):
     if norm_type == "GM":
         target_rank, elo_threshold, elo_target, target_performance = 6, 2200, 2380, 2599.5
     elif norm_type == "IM":
@@ -142,6 +141,12 @@ def evaluate_norm(norm_p, norm_type, players, hypothetical_opps=None, tournament
     n = len(opponent_elos)
     if n == 0:
         return None
+        
+    # Sumamos los puntos obtenidos contra rivales hipotéticos
+    actual_score += hypothetical_score
+
+    # Guardamos copia de ELOs sin ajustar
+    original_opponent_elos = opponent_elos.copy()
 
     elo_adjusted = False
     original_min_elo = 0
@@ -154,12 +159,15 @@ def evaluate_norm(norm_p, norm_type, players, hypothetical_opps=None, tournament
         elo_adjusted = True
 
     avg_elo = sum(opponent_elos) / n
+    unadjusted_avg_elo = sum(original_opponent_elos) / n
     max_freq = max(federation_counts.values()) if federation_counts else 0
 
     actual_p = actual_score / n if n > 0 else 0
     actual_p_idx = max(0, min(100, int(round(actual_p * 100.0))))
     actual_dp = dp_table.get(actual_p_idx, 0)
+    
     actual_performance = round(avg_elo + actual_dp + 1e-9)
+    unadjusted_performance = round(unadjusted_avg_elo + actual_dp + 1e-9)
 
     min_required_score = -1.0
     s = 0.0
@@ -190,7 +198,9 @@ def evaluate_norm(norm_p, norm_type, players, hypothetical_opps=None, tournament
 
     return {
         "norm_achieved": norm_achieved, "n_games": n, "opponent_details": opponent_details,
-        "avg_elo": avg_elo, "actual_score": actual_score, "actual_performance": actual_performance,
+        "avg_elo": avg_elo, "unadjusted_avg_elo": unadjusted_avg_elo,
+        "actual_score": actual_score, 
+        "actual_performance": actual_performance, "unadjusted_performance": unadjusted_performance,
         "min_required_score": min_required_score, "target_performance": target_performance, "elo_target": elo_target,
         "category_titles": category_titles, "req_cat_min": req_cat_min, "cond_cat_titles": cond_cat_titles,
         "valid_titles_total": valid_titles_total, "req_tot_min": req_tot_min, "cond_tot_titles": cond_tot_titles,
@@ -234,7 +244,6 @@ def scan_all_players_for_norms(players_list, include_womens_titles=True, tournam
                 })
                 
     return successful_candidates
-
 
 # --- FUNCIÓN A FALTA DE 1 RONDA ---
 def get_candidate_requirements(norm_p, norm_type, players, tournament_exemption=False):
@@ -486,7 +495,6 @@ def get_candidate_requirements_2_rounds(norm_p, norm_type, players, tournament_e
         "Banderas req.": req_fed
     }
 
-
 def scan_candidates_for_norms(players_list, include_womens_titles=True, tournament_exemption=False, rounds_to_go=1):
     candidates = []
     title_hierarchy = {"GM": 4, "IM": 3, "WGM": 2, "WIM": 1, "": 0, "FM": 0, "WFM": 0, "CM": 0, "WCM": 0}
@@ -606,7 +614,7 @@ if uploaded_file is not None:
         "🔮 Estimación Próximas Rondas"
     ])
 
-# -----------------------------------------------------
+    # -----------------------------------------------------
     # PESTAÑA 1: MODO INDIVIDUAL (AJUSTADA)
     # -----------------------------------------------------
     with tab_individual:
@@ -621,7 +629,6 @@ if uploaded_file is not None:
 
         norm_type = st.radio("¿Qué tipo de norma deseas evaluar?", available_norms, horizontal=True)
 
-        # MODIFICADO: Uso de botones (radio) para seleccionar rivales extra
         num_hypothetical = st.radio("¿Añadir rivales hipotéticos extra para cálculos?", [0, 1, 2], horizontal=True)
         
         hypothetical_opps = []
@@ -634,12 +641,12 @@ if uploaded_file is not None:
             hypothetical_opps.append(get_player(opp2_id, players))
 
         if norm_p:
-            res = evaluate_norm(norm_p, norm_type, players, hypothetical_opps, tournament_exemption)
+            # Calculamos con puntuación hipotética 0.0 como base inicial
+            res = evaluate_norm(norm_p, norm_type, players, hypothetical_opps, hypothetical_score=0.0, tournament_exemption=tournament_exemption)
             
             if res is None:
                 st.error("El jugador seleccionado no posee partidas válidas computables.")
             else:
-                # ... (El resto de la lógica de visualización del informe permanece igual)
                 def st_status(met):
                     return "✅ CUMPLIDO" if met else "❌ NO CUMPLIDO"
 
@@ -652,6 +659,31 @@ if uploaded_file is not None:
                 
                 if res["elo_adjusted"]:
                     st.warning(f"⚠️ **Umbral FIDE aplicado:** El rival con menor ELO ({res['original_min_elo']}) ha sido ajustado a {res['elo_threshold']} para el cálculo del ELO medio.")
+
+                # --- NUEVA SECCIÓN DE PERFORMANCE ---
+                st.write("### 🎯 Rendimiento (Performance - TPR)")
+                
+                if not hypothetical_opps:
+                    col1, col2 = st.columns(2)
+                    col1.metric("TPR Ajustada (Reglamento)", res["actual_performance"])
+                    col2.metric("TPR Real (Sin ajuste)", res["unadjusted_performance"])
+                else:
+                    st.info("Dado que has introducido rivales hipotéticos, la performance varía según el resultado de esas partidas. Aquí tienes los escenarios posibles:")
+                    
+                    max_hypo_pts = len(hypothetical_opps)
+                    scenarios = []
+                    # Generamos los escenarios de 0.5 en 0.5 desde el máximo posible hasta 0
+                    for pts in [x * 0.5 for x in range(int(max_hypo_pts * 2), -1, -1)]:
+                        res_hypo = evaluate_norm(norm_p, norm_type, players, hypothetical_opps, hypothetical_score=pts, tournament_exemption=tournament_exemption)
+                        scenarios.append({
+                            "Puntos en hipotéticas": f"+{pts}",
+                            "Puntuación Total": res_hypo["actual_score"],
+                            "TPR Ajustada (Reglamento)": res_hypo["actual_performance"],
+                            "TPR Real (Sin ajuste)": res_hypo["unadjusted_performance"]
+                        })
+                    
+                    st.dataframe(pd.DataFrame(scenarios), use_container_width=True, hide_index=True)
+                # ------------------------------------
 
                 st.write("### 📊 Verificación de condiciones FIDE")
                 st.write(f"**1. ELO medio de los rivales** (Mínimo: {res['elo_target']})  \n*Actual:* **{res['avg_elo']:.2f}** ➔ {st_status(res['cond_elo'])}")
@@ -668,7 +700,7 @@ if uploaded_file is not None:
                 if res["min_required_score"] < 0.0:
                     st.error(f"**7. Puntuación mínima** (Para TPR {res['target_performance']}) ➔ **❌ IMPOSIBLE** (La media de ELO es demasiado baja)")
                 else:
-                    st.write(f"**7. Puntuación mínima necesaria** (Para TPR {res['target_performance']}) (Requiere: {res['min_required_score']} ptos)  \n*Performance actual:* **{res['actual_performance']}**  \n*Puntuación actual:* **{res['actual_score']} ptos** ➔ {st_status(res['cond_score'])}")
+                    st.write(f"**7. Puntuación mínima necesaria** (Para TPR {res['target_performance']}) (Requiere: {res['min_required_score']} ptos)  \n*Puntuación actual base:* **{res['actual_score']} ptos** ➔ {st_status(res['cond_score'])}")
                     
                     if res["norm_achieved"]:
                         st.balloons()
